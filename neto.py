@@ -1,48 +1,111 @@
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
-from google.oauth2.service_account import Credentials
-import io
+import streamlit as st
+import pandas as pd
 import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+from dotenv import load_dotenv
 
-def baixar_planilha_google(drive_file_id, diretorio, nome_arquivo, credenciais_json):
+# Carrega variáveis do .env
+load_dotenv()
+
+# Configurações (agora lê do .env)
+EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")  # Valor padrão para Gmail
+SMTP_PORT = int(os.getenv("SMTP_PORT", 587))  # Valor padrão para Gmail
+
+# Outras configurações
+SHEET_ID = os.getenv("sheet_id")
+SHEET_NAME = os.getenv("sheet_name")
+DOWNLOAD_FOLDER = os.getenv("download_folder")
+FILE_NAME = os.getenv("file_name")
+FILE_PATH = os.path.join(DOWNLOAD_FOLDER, FILE_NAME)  # Definindo FILE_PATH globalmente
+
+# Função para download da planilha
+def download_spreadsheet():
     try:
-        # Autenticação com a API do Google
-        creds = Credentials.from_service_account_file(credenciais_json)
-        service = build('drive', 'v3', credentials=creds)
-
-        # Solicita o arquivo na API do Google Drive no formato Excel
-        request = service.files().export_media(fileId=drive_file_id, mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        fh = io.BytesIO()
-
-        downloader = MediaIoBaseDownload(fh, request)
-        done = False
-        while not done:
-            status, done = downloader.next_chunk()
-
-        # Define o caminho completo do arquivo onde será salvo
-        caminho_arquivo = os.path.join(diretorio, nome_arquivo)
-
-        # Escreve o conteúdo baixado no arquivo
-        with open(caminho_arquivo, 'wb') as f:
-            f.write(fh.getvalue())
-
-        print(f"Arquivo salvo com sucesso em: {caminho_arquivo}")
-
+        url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
+        df = pd.read_csv(url)
+        os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+        df.to_excel(FILE_PATH, index=False)
+        return True, FILE_PATH
     except Exception as e:
-        print(f"Erro ao baixar ou salvar a planilha: {e}")
+        return False, str(e)
 
+# Função para enviar e-mail
+def send_email(to_email, subject, body, attachment_path):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_ADDRESS
+        msg['To'] = to_email
+        msg['Subject'] = subject
 
-# ID do arquivo no Google Drive (extraído do link fornecido)
-drive_file_id = "1gdRPlkLjaM7y6MmOBzebqqGpzxZBWztyY36iRXgX1LY"
+        msg.attach(MIMEText(body, 'plain'))
 
-# Diretório onde o arquivo será salvo
-diretorio = r"C:\Users\willi\Downloads"
+        with open(attachment_path, "rb") as attachment:
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(attachment.read())
+            encoders.encode_base64(part)
+            part.add_header(
+                'Content-Disposition',
+                f'attachment; filename={os.path.basename(attachment_path)}',
+            )
+            msg.attach(part)
 
-# Nome do arquivo que será salvo
-nome_arquivo = "planilha_neto.xlsx"
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            server.send_message(msg)
+        
+        return True, None
+    except Exception as e:
+        return False, str(e)
 
-# Caminho para o arquivo JSON de credenciais da API Google Drive
-credenciais_json = r"credentials.json"
+# Interface Streamlit
+def main():
+    st.title("📊 Gerenciador de Planilha")
+    
+    # Verifica se credenciais de e-mail estão configuradas
+    if not all([EMAIL_ADDRESS, EMAIL_PASSWORD]):
+        st.error("⚠️ Configuração de e-mail incompleta. Verifique o arquivo .env")
 
-# Chama a função para baixar e salvar o arquivo
-baixar_planilha_google(drive_file_id, diretorio, nome_arquivo, credenciais_json)
+    tab1, tab2 = st.tabs(["Download Local", "Enviar por E-mail"])
+
+    with tab1:
+        if st.button("⬇️ Baixar Planilha"):
+            success, result = download_spreadsheet()
+            if success:
+                st.success(f"✅ Planilha salva em:\n{result}")
+                st.session_state.file_downloaded = True  # Marca que o download foi feito
+            else:
+                st.error(f"❌ Falha no download:\n{result}")
+                st.session_state.file_downloaded = False
+
+    with tab2:
+        st.subheader("Enviar Planilha por E-mail")
+        
+        # Verifica se o download foi feito
+        if not os.path.exists(FILE_PATH) and not st.session_state.get('file_downloaded'):
+            st.warning("⚠️ Faça o download da planilha primeiro!")
+        else:
+            to_email = st.text_input("Destinatário:", placeholder="email@exemplo.com")
+            subject = st.text_input("Assunto:", value="Planilha de Investimentos")
+            body = st.text_area("Mensagem:", value="Segue em anexo a planilha solicitada.")
+            
+            if st.button("✉️ Enviar E-mail"):
+                if not to_email or "@" not in to_email:
+                    st.warning("Por favor, insira um e-mail válido")
+                else:
+                    success, error_msg = send_email(to_email, subject, body, FILE_PATH)
+                    if success:
+                        st.success("✅ E-mail enviado com sucesso!")
+                    else:
+                        st.error(f"❌ Falha no envio: {error_msg}")
+
+if __name__ == "__main__":
+    if 'file_downloaded' not in st.session_state:
+        st.session_state.file_downloaded = False
+    main()

@@ -40,7 +40,7 @@ diretorio = st.text_input('Informe o diretório para salvar o arquivo CSV')
 
 # Definir diretório padrão se não informado
 if not diretorio:
-    diretorio = r"C:\Users\willi\OneDrive\Documentos\Investimentos"
+    diretorio = os.getenv("download_folder")
 
 if st.button('Salvar CSV'):
     # Chama a função para salvar o arquivo
