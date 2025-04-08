@@ -128,6 +128,21 @@ def main():
             if success:
                 st.success(f"✅ Arquivo salvo em:\n{result}")
                 st.session_state.tesouro_downloaded = True
+                
+                # Display latest Data Base after successful download
+                try:
+                    df = pd.read_csv(TESOURO_FILE_PATH, sep=';', encoding='latin1')
+                    
+                    if "Data Base" in df.columns:
+                        df["Data Base"] = pd.to_datetime(df["Data Base"], dayfirst=True, errors='coerce')
+                        latest_date = df["Data Base"].max()
+                        formatted_date = latest_date.strftime('%d/%m/%Y')
+                        st.info(f"📅 Data de atualização dos dados: {formatted_date}")
+                    else:
+                        st.warning("⚠️ A coluna 'Data Base' não foi encontrada no arquivo.")
+
+                except Exception as e:
+                    st.error(f"❌ Falha ao ler o arquivo CSV: {str(e)}")
             else:
                 st.error(f"❌ Falha no download:\n{result}")
                 st.session_state.tesouro_downloaded = False
