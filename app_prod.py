@@ -15,20 +15,25 @@ SMTP_SERVER = st.secrets["email"]["SMTP_SERVER"]
 SMTP_PORT = int(st.secrets["email"]["SMTP_PORT"])
 
 # Configurações de diretórios
-DOWNLOAD_FOLDER = st.secrets["sheet_config"]["download_folder"]
+# DOWNLOAD_FOLDER = st.secrets["sheet_config"]["download_folder"]
+DOWNLOAD_FOLDER = os.path.normpath(st.secrets["sheet_config"]["download_folder"])
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 # Configurações do Neto
 NETO_SHEET_ID = st.secrets["sheet_config"]["sheet_id"]
 NETO_SHEET_NAME = st.secrets["sheet_config"]["sheet_name"]
 NETO_FILE_NAME = st.secrets["sheet_config"]["file_name"]
-NETO_FILE_PATH = os.path.join(DOWNLOAD_FOLDER, NETO_FILE_NAME)
+# NETO_FILE_PATH = os.path.join(DOWNLOAD_FOLDER, NETO_FILE_NAME)
 
 # Configurações do Tesouro
 TESOURO_URL = "https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/PrecoTaxaTesouroDireto.csv"
 
 TESOURO_FILE_NAME = "PrecoTaxaTesouroDireto.csv"
-TESOURO_FILE_PATH = os.path.join(DOWNLOAD_FOLDER, TESOURO_FILE_NAME)
+# TESOURO_FILE_PATH = os.path.join(DOWNLOAD_FOLDER, TESOURO_FILE_NAME)
+
+NETO_FILE_PATH = os.path.normpath(os.path.join(DOWNLOAD_FOLDER, NETO_FILE_NAME))
+TESOURO_FILE_PATH = os.path.normpath(os.path.join(DOWNLOAD_FOLDER, TESOURO_FILE_NAME))
+
 
 # Função para download da planilha do Neto
 def download_spreadsheet():
