@@ -21,6 +21,7 @@ if platform.system() == "Windows":
 else:
     DOWNLOAD_FOLDER = os.path.normpath("downloads")  # Pasta local padrão no Streamlit Cloud
 
+# Garante que a pasta de download exista
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 # Configurações do Neto
@@ -144,6 +145,15 @@ def main():
                         st.info(f"📅 Data de atualização dos dados: {formatted_date}")
                     else:
                         st.warning("⚠️ A coluna 'Data Base' não foi encontrada no arquivo.")
+
+                    # Adicionar botão de download
+                    with open(TESOURO_FILE_PATH, "rb") as file:
+                        st.download_button(
+                            label="⬇️ Fazer Download do CSV",
+                            data=file,
+                            file_name=TESOURO_FILE_NAME,
+                            mime="text/csv"
+                        )
 
                 except Exception as e:
                     st.error(f"❌ Falha ao ler o arquivo CSV: {str(e)}")
