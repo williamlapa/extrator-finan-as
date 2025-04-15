@@ -1,3 +1,0 @@
-Titulo	Abrev	Tipo
-Tesouro Prefixado 2006	T Prefixado 2006	Prefixado
-Tesouro IPCA+ com Juros Semestrais 2009	T IPCA c JS 2009	Inflação
