@@ -1,5 +1,6 @@
 tes/scripts/ext/
 tes/
+ext/
 .streamlit/
 .env
 .venv
