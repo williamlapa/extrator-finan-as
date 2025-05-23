@@ -43,9 +43,9 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("#### Informe a taxa de referência para cada grupo:")
-    taxa_ref_selic = st.number_input("Taxa referência SELIC (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.01, format="%.2f")
-    taxa_ref_prefixado = st.number_input("Taxa referência PREFIXADO (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.01, format="%.2f")
-    taxa_ref_ipca = st.number_input("Taxa referência IPCA (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.01, format="%.2f")
+    taxa_ref_selic = st.number_input("Taxa referência SELIC (%)", min_value=0.0, max_value=100.0, value=14.0, step=0.01, format="%.2f")
+    taxa_ref_prefixado = st.number_input("Taxa referência PREFIXADO (%)", min_value=0.0, max_value=100.0, value=14.0, step=0.01, format="%.2f")
+    taxa_ref_ipca = st.number_input("Taxa referência IPCA (%)", min_value=0.0, max_value=100.0, value=7.0, step=0.01, format="%.2f")
 
 # Título do app
 st.title("Análise de Variação do Tesouro Direto")
