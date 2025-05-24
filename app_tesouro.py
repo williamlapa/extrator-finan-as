@@ -117,27 +117,50 @@ with tab2:
                 st.write(f"**Comparação {nome}**")
                 comparacoes = []
                 for idx, row in df_atual.iterrows():
+                    titulo_api = str(row["Título"])
+                    partes = titulo_api.split()
+                    if len(partes) < 2:
+                        continue
+                    # Extrai o ano (última parte numérica de 4 dígitos)
+                    ano_api = None
+                    for p in partes[::-1]:
+                        if p.isdigit() and len(p) == 4:
+                            ano_api = int(p)
+                            break
+                    if ano_api is None:
+                        continue
+                    # Extrai o tipo do título (tudo menos o ano)
+                    tipo_titulo_api = titulo_api.replace(str(ano_api), '').strip()
+                    # Filtra o CSV por tipo de título exato e ano
                     filtro = (
-                        (df["Tipo Titulo"].str.contains(tipos[nome], case=False)) &
+                        (df["Tipo Titulo"].str.strip().str.lower() == tipo_titulo_api.lower()) &
+                        (df["Ano Vencimento"] == ano_api) &
                         (df["Data Base"] == data_recente)
                     )
                     df_match = df[filtro]
+                    pu_api = row["Preço R$ (Compra)"]
                     if not df_match.empty:
                         pu_csv = df_match.iloc[0]["PU Base Manha"]
-                        pu_api = row["Preço R$ (Compra)"]
                         variacao = ((pu_api - pu_csv) / pu_csv) * 100
                         comparacoes.append({
                             "Título": row["Título"],
-                            "PU API Agora": pu_api,
-                            f"PU CSV {data_recente.strftime('%d/%m/%Y')}": pu_csv,
+                            f"Valor D-1: {data_recente.strftime('%d/%m/%Y')}": pu_csv,
+                            "Valor Agora": pu_api,                            
                             "Variação (%)": round(variacao, 2)
+                        })
+                    else:
+                        comparacoes.append({
+                            "Título": row["Título"],
+                            f"Valor D-1: {data_recente.strftime('%d/%m/%Y')}": "Não localizado",
+                            "Valor Agora": pu_api,                            
+                            "Variação (%)": "Não localizado"
                         })
                 if comparacoes:
                     df_comp = pd.DataFrame(comparacoes)
                     def color_variation(val):
-                        if val > 0:
+                        if isinstance(val, (int, float)) and val > 0:
                             return 'background-color: #d4edda; color: #155724;'
-                        elif val < 0:
+                        elif isinstance(val, (int, float)) and val < 0:
                             return 'background-color: #f8d7da; color: #721c24;'
                         else:
                             return ''
